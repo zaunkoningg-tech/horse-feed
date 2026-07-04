@@ -1,5 +1,5 @@
 // Minimal cache-first service worker.
-const CACHE_VERSION = 'horsefeed-v1';
+const CACHE_VERSION = 'horsefeed-v2';
 const ASSETS = ['./', './index.html', './feedmath.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (e) => {

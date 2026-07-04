@@ -231,6 +231,7 @@
     <label>Unit
       <select id="pd-unit">
         <option value="g">Grams</option>
+        <option value="kg">Kilograms</option>
         <option value="scoop">Scoops</option>
       </select>
     </label>
@@ -263,6 +264,10 @@ function parseNum(v) {
 
 function kg(grams) {
   return (grams / 1000).toFixed(1);
+}
+
+function unitLabel(product) {
+  return product.unit === 'scoop' ? 'scoops' : product.unit === 'kg' ? 'kg' : 'g';
 }
 
 function genId() {
@@ -483,7 +488,7 @@ function renderToday(el) {
       return `<div class="feed-row">
         <span class="feed-name">${esc(product.name)}</span>
         <input type="number" step="any" inputmode="decimal" class="feed-input" data-horse="${horse.id}" data-product="${pid}" value="${val}">
-        <span class="unit">${product.unit === 'scoop' ? 'scoops' : 'g'}</span>
+        <span class="unit">${unitLabel(product)}</span>
       </div>`;
     }).join('');
 
@@ -600,7 +605,7 @@ function renderSetup(el) {
 
   html += `<div class="setup-section"><h2>Products</h2>`;
   html += activeProducts.length ? activeProducts.map((p) => `<div class="row-line">
-      <span class="feed-name">${esc(p.name)} (${p.unit === 'scoop' ? 'scoop' : 'g'})</span>
+      <span class="feed-name">${esc(p.name)} (${unitLabel(p)})</span>
       <button data-action="edit-product" data-id="${p.id}">Edit</button>
       <button data-action="archive-product" data-id="${p.id}">Archive</button>
     </div>`).join('') : '<p class="empty">No products yet.</p>';
@@ -621,7 +626,7 @@ function renderSetup(el) {
       ${activeProducts.length ? activeProducts.map((p) => `<div class="feed-row">
         <span class="feed-name">${esc(p.name)}</span>
         <input type="number" step="any" class="feed-input" data-action="schedule-input" data-horse="${h.id}" data-product="${p.id}" value="${(state.schedule[h.id] && state.schedule[h.id][p.id]) || ''}">
-        <span class="unit">${p.unit === 'scoop' ? 'scoops' : 'g'}</span>
+        <span class="unit">${unitLabel(p)}</span>
       </div>`).join('') : '<p class="empty">No products.</p>'}
     </div>`).join('');
   html += `</div>`;

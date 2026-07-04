@@ -14,7 +14,9 @@
   function toGrams(amount, product) {
     amount = Number(amount) || 0;
     if (!product) return 0;
-    return product.unit === 'scoop' ? amount * (product.gramsPerScoop || 0) : amount;
+    if (product.unit === 'scoop') return amount * (product.gramsPerScoop || 0);
+    if (product.unit === 'kg') return amount * 1000;
+    return amount; // 'g' and anything unknown: treat as grams so old data never breaks
   }
 
   // yyyy-mm-dd string -> yyyy-mm-dd string, n days offset (n may be negative).
@@ -146,6 +148,8 @@
     // toGrams
     assert(toGrams(500, state.products[0]) === 500, 'gram product passthrough');
     assert(toGrams(2, state.products[1]) === 500, 'scoop conversion');
+    assert(toGrams(1.5, { unit: 'kg' }) === 1500, 'kg conversion');
+    assert(toGrams(7, { unit: 'weird' }) === 7, 'unknown unit falls back to grams');
 
     // dayTotals
     const totals = dayTotals(state, '2024-01-01');
