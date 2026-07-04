@@ -787,7 +787,7 @@ async function pullState() {
     const data = await res.json();
     const file = data.files && data.files['feedapp.json'];
     if (!file) throw new Error('no feedapp.json in gist');
-    const remote = JSON.parse(file.content);
+    const remote = JSON.parse(file.content.replace(/^﻿/, ''));
     // Never let a pulled state clear the gist id we're syncing through.
     if (remote.settings) remote.settings.gistId = remote.settings.gistId || gistId;
     if (remote.updatedAt > state.updatedAt) {

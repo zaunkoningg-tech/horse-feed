@@ -33,7 +33,7 @@ async function main() {
     const data = await res.json();
     const file = data.files && data.files['feedapp.json'];
     if (!file) throw new Error('feedapp.json not found in gist');
-    state = JSON.parse(file.content);
+    state = JSON.parse(clean(file.content));
     // The gist starts as a bare placeholder before the app's first sync.
     state = Object.assign(
       { settings: { safetyDays: 3 }, products: [], horses: [], schedule: {}, logs: {}, purchases: [] },
