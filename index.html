@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horse Feed</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.svg">
+<meta name="theme-color" content="#2f6b3a">
+<style>
+  :root {
+    --bg: #f4f5f2;
+    --card-bg: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --border: #e0e0dc;
+    --accent: #2f6b3a;
+    --accent-text: #ffffff;
+    --green: #2e7d32;
+    --amber: #b26a00;
+    --red: #c62828;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --card-bg: #1e2126;
+      --text: #eeeeee;
+      --muted: #9aa0a6;
+      --border: #2c2f34;
+      --accent: #4f9a5c;
+      --accent-text: #0b0f0c;
+      --green: #4caf50;
+      --amber: #ffb74d;
+      --red: #ef5350;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+  main#views {
+    flex: 1;
+    padding: 16px 16px calc(84px + env(safe-area-inset-bottom));
+    max-width: 640px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  h1, h2, h3 { margin: 0 0 8px; }
+  h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; color: var(--muted); }
+  p { margin: 4px 0; }
+  a { color: var(--accent); }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .card.level-green { border-left-color: var(--green); }
+  .card.level-amber { border-left-color: var(--amber); }
+  .card.level-red { border-left-color: var(--red); }
+  .card-title { font-weight: 600; margin-bottom: 6px; }
+  .card-row { color: var(--muted); font-size: 0.92rem; }
+
+  .banner {
+    background: var(--red);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .banner ul { margin: 6px 0 0; padding-left: 20px; }
+  .next-purchase { color: var(--muted); margin-bottom: 14px; }
+  .empty { color: var(--muted); font-style: italic; }
+
+  .btn-primary, .btn-secondary {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
+  .btn-secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); width: auto; padding: 0 16px; margin-top: 8px; }
+
+  button { font-family: inherit; }
+  button[data-action] { min-height: 44px; }
+
+  input, select {
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 8px 10px;
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+  }
+  label { display: block; margin: 10px 0; font-size: 0.9rem; color: var(--muted); }
+  label input, label select { display: block; width: 100%; margin-top: 4px; color: var(--text); }
+
+  .feed-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .feed-name { flex: 1; }
+  .feed-input { width: 90px; text-align: right; }
+  .unit { color: var(--muted); width: 50px; font-size: 0.85rem; }
+
+  .row-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .row-line input[type="text"] { flex: 1; }
+  .row-line button { min-height: 40px; }
+
+  .extra-row { margin-top: 6px; }
+  .extra-row select { width: 100%; }
+
+  .quick-btns { display: flex; gap: 8px; margin: 8px 0; }
+  .quick-btns button { flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); }
+  .shopping-list { padding-left: 20px; }
+
+  .setup-section { margin-bottom: 24px; }
+  .hint { font-size: 0.9rem; color: var(--muted); }
+  .schedule-horse { margin-bottom: 16px; }
+  .file-label { cursor: pointer; }
+
+  details summary { cursor: pointer; color: var(--muted); margin: 8px 0; }
+
+  nav#tabbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 4px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    min-height: 56px;
+  }
+  .tab-btn span { display: block; }
+  .tab-btn .icon { font-size: 1.3rem; }
+  .tab-btn.active { color: var(--accent); }
+
+  dialog {
+    border: none;
+    border-radius: var(--radius);
+    padding: 18px;
+    background: var(--card-bg);
+    color: var(--text);
+    width: min(420px, 90vw);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.4); }
+  .dialog-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .dialog-actions button { flex: 1; min-height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .dialog-actions button[value="ok"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="views">
+    <section id="view-home" class="view"></section>
+    <section id="view-today" class="view"></section>
+    <section id="view-stock" class="view"></section>
+    <section id="view-setup" class="view"></section>
+  </main>
+
+  <nav id="tabbar">
+    <button class="tab-btn" data-action="switch-tab" data-tab="home"><span class="icon">🏠</span><span>Home</span></button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="today"><span class="icon">📝</span><span>Today</span></button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="stock"><span class="icon">📦</span><span>Stock</span></button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="setup"><span class="icon">⚙️</span><span>Setup</span></button>
+  </nav>
+</div>
+
+<dialog id="buy-dialog">
+  <form method="dialog">
+    <h3>Add stock</h3>
+    <label>Packs <input type="number" id="buy-packs" value="1" min="0" step="any"></label>
+    <label>or custom amount (kg) <input type="number" id="buy-kg" step="any" placeholder="optional"></label>
+    <div class="dialog-actions">
+      <button type="submit" formnovalidate value="cancel">Cancel</button>
+      <button type="submit" value="ok">Add</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="product-dialog">
+  <form method="dialog">
+    <h3 id="product-dialog-title">Add product</h3>
+    <input type="hidden" id="pd-id">
+    <label>Name <input type="text" id="pd-name" required></label>
+    <label>Unit
+      <select id="pd-unit">
+        <option value="g">Grams</option>
+        <option value="scoop">Scoops</option>
+      </select>
+    </label>
+    <label id="pd-gps-label">Grams per scoop <input type="number" id="pd-gps" step="any"></label>
+    <label>Pack size (kg) <input type="number" id="pd-pack-kg" step="any"></label>
+    <label>Pack label <input type="text" id="pd-pack-label" placeholder="e.g. 20 kg bag"></label>
+    <label>Current stock (kg) <input type="number" id="pd-stock-kg" step="any"></label>
+    <div class="dialog-actions">
+      <button type="submit" formnovalidate value="cancel">Cancel</button>
+      <button type="submit" value="ok">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="./feedmath.js"></script>
+<script>
+'use strict';
+
+// ---------- helpers ----------
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function parseNum(v) {
+  if (v == null) return 0;
+  const n = parseFloat(String(v).trim().replace(',', '.'));
+  return isFinite(n) ? n : 0;
+}
+
+function kg(grams) {
+  return (grams / 1000).toFixed(1);
+}
+
+function genId() {
+  return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+// local yyyy-mm-dd (not UTC), so "today" matches the user's clock
+function todayStr() {
+  const d = new Date();
+  const offsetMs = d.getTimezoneOffset() * 60000;
+  return new Date(d - offsetMs).toISOString().slice(0, 10);
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', timeZone: 'UTC' });
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// ---------- state ----------
+
+const STORAGE_KEY = 'feedapp';
+const TOKEN_KEY = 'feedapp_token';
+
+function seedState() {
+  return {
+    updatedAt: Date.now(),
+    settings: { safetyDays: 3, ntfyTopic: '', gistId: '' },
+    horses: [{ id: 'h1', name: 'Horse 1' }, { id: 'h2', name: 'Horse 2' }],
+    products: [],
+    schedule: { h1: {}, h2: {} },
+    logs: {},
+    purchases: [],
+  };
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return seedState();
+  try {
+    return Object.assign(seedState(), JSON.parse(raw));
+  } catch (e) {
+    console.error('Corrupt local state, starting fresh:', e);
+    return seedState();
+  }
+}
+
+function persistLocal() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// Single mutation entry point: bump timestamp, persist, schedule a gist push, re-render.
+function save() {
+  state.updatedAt = Date.now();
+  persistLocal();
+  schedulePush();
+  render();
+}
+
+let state = loadState();
+let currentTab = 'home';
+let todayViewDate = todayStr();
+let extraRows = {}; // horseId -> [productId,...] added this session but not yet saved
+let planDays = 14;
+let syncStatus = 'sync off';
+
+// ---------- stock accounting ----------
+
+function saveDay(dateStr, entriesByHorse) {
+  const oldTotals = feedmath.dayTotals(state, dateStr);
+  const newDay = {};
+  for (const horseId in entriesByHorse) {
+    const entries = {};
+    for (const productId in entriesByHorse[horseId]) {
+      const amt = entriesByHorse[horseId][productId];
+      if (amt) entries[productId] = amt;
+    }
+    if (Object.keys(entries).length) newDay[horseId] = entries;
+  }
+  // Compute new totals against a scratch state so we don't mutate real logs
+  // until the delta accounting below is done.
+  const scratch = Object.assign({}, state, { logs: Object.assign({}, state.logs, { [dateStr]: newDay }) });
+  const newTotals = feedmath.dayTotals(scratch, dateStr);
+
+  const productIds = new Set([...Object.keys(oldTotals), ...Object.keys(newTotals)]);
+  for (const pid of productIds) {
+    const product = state.products.find((p) => p.id === pid);
+    if (!product) continue;
+    const oldG = oldTotals[pid] || 0;
+    const newG = newTotals[pid] || 0;
+    // Only the difference vs. what was previously logged is applied, so
+    // re-saving a day never double-deducts stock.
+    product.stockGrams += (oldG - newG);
+  }
+
+  if (Object.keys(newDay).length) state.logs[dateStr] = newDay;
+  else delete state.logs[dateStr];
+
+  save();
+}
+
+function deleteDayLog(dateStr) {
+  const oldTotals = feedmath.dayTotals(state, dateStr);
+  for (const pid in oldTotals) {
+    const product = state.products.find((p) => p.id === pid);
+    if (product) product.stockGrams += oldTotals[pid];
+  }
+  delete state.logs[dateStr];
+  save();
+}
+
+function addPurchase(productId, grams) {
+  const product = state.products.find((p) => p.id === productId);
+  if (!product || grams <= 0) return;
+  product.stockGrams += grams;
+  state.purchases.push({ date: todayStr(), productId, grams });
+  save();
+}
+
+// ---------- notifications ----------
+
+function maybeNotify(alerts, today) {
+  if (!alerts.length) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (localStorage.getItem('feedapp_last_notify') === today) return;
+  new Notification('Buy feed!', { body: alerts.map((a) => `${a.name}: buy by ${fmtDate(a.buyBy)}`).join(', ') });
+  localStorage.setItem('feedapp_last_notify', today);
+}
+
+// ---------- render: home ----------
+
+function renderHome(el) {
+  const today = todayStr();
+  const alerts = feedmath.checkAlerts(state, today);
+  maybeNotify(alerts, today);
+  const activeProducts = state.products.filter((p) => !p.archived);
+
+  let html = '';
+  if (alerts.length) {
+    html += `<div class="banner">
+      <strong>Buy feed!</strong>
+      <ul>${alerts.map((a) => `<li>${esc(a.name)} — buy by ${fmtDate(a.buyBy)}</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  let next = null;
+  for (const p of activeProducts) {
+    const bb = feedmath.buyByDate(state, p.id, today, state.settings.safetyDays);
+    if (bb && (!next || bb < next.buyBy)) next = { name: p.name, buyBy: bb };
+  }
+  html += `<p class="next-purchase">${next ? `Next purchase: <strong>${esc(next.name)}</strong> by ${fmtDate(next.buyBy)}` : 'No purchases needed soon.'}</p>`;
+
+  if (!activeProducts.length) {
+    html += `<p class="empty">No products yet. Add some in Setup.</p>`;
+  }
+
+  html += activeProducts.map((p) => {
+    const burn = feedmath.burnRate(state, p.id, today);
+    const dl = feedmath.daysLeft(state, p.id, today);
+    const bb = feedmath.buyByDate(state, p.id, today, state.settings.safetyDays);
+    const level = dl > 2 * state.settings.safetyDays ? 'green' : dl > state.settings.safetyDays ? 'amber' : 'red';
+    const scoopsLine = p.unit === 'scoop' && p.gramsPerScoop ? ` (${(p.stockGrams / p.gramsPerScoop).toFixed(1)} scoops)` : '';
+    return `<div class="card level-${level}">
+      <div class="card-title">${esc(p.name)}</div>
+      <div class="card-row">Stock: ${kg(p.stockGrams)} kg${scoopsLine}</div>
+      <div class="card-row">Burn: ${Math.round(burn)} g/day</div>
+      <div class="card-row">Days left: ${isFinite(dl) ? dl.toFixed(1) : '∞'}</div>
+      <div class="card-row">Buy by: ${bb ? fmtDate(bb) : '—'}</div>
+    </div>`;
+  }).join('');
+
+  html += `<button class="btn-primary" data-action="go-today">Log today's feeding</button>`;
+  el.innerHTML = html;
+}
+
+// ---------- render: today ----------
+
+function renderToday(el) {
+  const dateStr = todayViewDate;
+  const existingLog = state.logs[dateStr];
+  const activeProducts = state.products.filter((p) => !p.archived);
+
+  let html = `<h2>Today's feeding</h2>`;
+  html += `<label>Date <input type="date" id="today-date" value="${dateStr}"></label>`;
+  if (existingLog) {
+    html += `<p class="hint">Already logged for this date — editing. <a href="#" data-action="delete-day">Delete this day's log</a></p>`;
+  }
+
+  html += state.horses.map((horse) => {
+    const rowProductIds = new Set();
+    activeProducts.forEach((p) => {
+      if (state.schedule[horse.id] && state.schedule[horse.id][p.id]) rowProductIds.add(p.id);
+    });
+    if (existingLog && existingLog[horse.id]) Object.keys(existingLog[horse.id]).forEach((pid) => rowProductIds.add(pid));
+    (extraRows[horse.id] || []).forEach((pid) => rowProductIds.add(pid));
+
+    const pickerOptions = activeProducts.filter((p) => !rowProductIds.has(p.id));
+    const rowsHtml = [...rowProductIds].map((pid) => {
+      const product = state.products.find((p) => p.id === pid);
+      if (!product) return '';
+      const existingVal = existingLog && existingLog[horse.id] ? existingLog[horse.id][pid] : undefined;
+      const scheduledVal = state.schedule[horse.id] ? state.schedule[horse.id][pid] : undefined;
+      const val = existingVal != null ? existingVal : (scheduledVal || '');
+      return `<div class="feed-row">
+        <span class="feed-name">${esc(product.name)}</span>
+        <input type="number" step="any" inputmode="decimal" class="feed-input" data-horse="${horse.id}" data-product="${pid}" value="${val}">
+        <span class="unit">${product.unit === 'scoop' ? 'scoops' : 'g'}</span>
+      </div>`;
+    }).join('');
+
+    const pickerHtml = pickerOptions.length
+      ? `<div class="extra-row"><select data-action="add-extra" data-horse="${horse.id}">
+          <option value="">+ extra product</option>
+          ${pickerOptions.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+        </select></div>`
+      : '';
+
+    return `<div class="card">
+      <div class="card-title">${esc(horse.name)}</div>
+      ${rowsHtml || '<p class="empty">No scheduled products.</p>'}
+      ${pickerHtml}
+    </div>`;
+  }).join('');
+
+  html += `<button class="btn-primary" data-action="save-day">Save day ✓</button>`;
+  el.innerHTML = html;
+}
+
+function onSaveDay() {
+  const inputs = document.querySelectorAll('#view-today .feed-input');
+  const entriesByHorse = {};
+  inputs.forEach((inp) => {
+    const hid = inp.dataset.horse, pid = inp.dataset.product;
+    if (!entriesByHorse[hid]) entriesByHorse[hid] = {};
+    entriesByHorse[hid][pid] = parseNum(inp.value);
+  });
+  saveDay(todayViewDate, entriesByHorse);
+  extraRows = {};
+  showToast('Saved — stock updated');
+}
+
+function onDeleteDay() {
+  if (!confirm("Delete this day's log? Stock will be restored.")) return;
+  deleteDayLog(todayViewDate);
+  showToast('Log deleted, stock restored');
+}
+
+// ---------- render: stock ----------
+
+function renderStock(el) {
+  const today = todayStr();
+  const activeProducts = state.products.filter((p) => !p.archived);
+
+  let html = `<h2>Stock</h2>`;
+  if (!activeProducts.length) html += `<p class="empty">No products yet. Add some in Setup.</p>`;
+
+  html += activeProducts.map((p) => {
+    const burn = feedmath.burnRate(state, p.id, today);
+    const dl = feedmath.daysLeft(state, p.id, today);
+    return `<div class="card">
+      <div class="card-title">${esc(p.name)}</div>
+      <div class="card-row">Stock: ${kg(p.stockGrams)} kg</div>
+      <div class="card-row">Burn: ${Math.round(burn)} g/day</div>
+      <div class="card-row">Days left: ${isFinite(dl) ? dl.toFixed(1) : '∞'}</div>
+      <button class="btn-secondary" data-action="open-buy" data-id="${p.id}">+ bought</button>
+    </div>`;
+  }).join('');
+
+  const items = activeProducts.map((p) => {
+    const packs = feedmath.packsToBuy(state, p.id, planDays, today);
+    if (packs <= 0) return '';
+    return `<li>${esc(p.name)}: ${packs} × ${esc(p.packLabel || 'pack')}</li>`;
+  }).filter(Boolean);
+
+  html += `<div class="card">
+    <h2>Plan purchase</h2>
+    <label>Last for <input type="number" id="plan-days" value="${planDays}" min="1"> days</label>
+    <div class="quick-btns">
+      <button data-action="plan-quick" data-days="7">7</button>
+      <button data-action="plan-quick" data-days="14">14</button>
+      <button data-action="plan-quick" data-days="30">30</button>
+    </div>
+    <ul class="shopping-list">${items.length ? items.join('') : '<li class="empty">Nothing needed.</li>'}</ul>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+const buyDialog = document.getElementById('buy-dialog');
+function openBuyDialog(productId) {
+  buyDialog.dataset.productId = productId;
+  document.getElementById('buy-packs').value = 1;
+  document.getElementById('buy-kg').value = '';
+  buyDialog.showModal();
+}
+buyDialog.addEventListener('close', () => {
+  if (buyDialog.returnValue !== 'ok') return;
+  const product = state.products.find((p) => p.id === buyDialog.dataset.productId);
+  if (!product) return;
+  const kgVal = parseNum(document.getElementById('buy-kg').value);
+  const packs = parseNum(document.getElementById('buy-packs').value);
+  const grams = kgVal > 0 ? Math.round(kgVal * 1000) : Math.round(packs * product.packGrams);
+  addPurchase(product.id, grams);
+  if (grams > 0) showToast('Stock updated');
+});
+
+// ---------- render: setup ----------
+
+function renderSetup(el) {
+  const activeProducts = state.products.filter((p) => !p.archived);
+  const archivedProducts = state.products.filter((p) => p.archived);
+
+  let html = `<h2>Setup</h2>`;
+
+  html += `<div class="setup-section"><h2>Horses</h2>`;
+  html += state.horses.map((h) => `<div class="row-line">
+      <input type="text" data-action="rename-horse" data-id="${h.id}" value="${esc(h.name)}">
+      <button data-action="remove-horse" data-id="${h.id}">Remove</button>
+    </div>`).join('');
+  html += `<button class="btn-secondary" data-action="add-horse">+ Add horse</button></div>`;
+
+  html += `<div class="setup-section"><h2>Products</h2>`;
+  html += activeProducts.length ? activeProducts.map((p) => `<div class="row-line">
+      <span class="feed-name">${esc(p.name)} (${p.unit === 'scoop' ? 'scoop' : 'g'})</span>
+      <button data-action="edit-product" data-id="${p.id}">Edit</button>
+      <button data-action="archive-product" data-id="${p.id}">Archive</button>
+    </div>`).join('') : '<p class="empty">No products yet.</p>';
+  html += `<button class="btn-secondary" data-action="add-product">+ Add product</button>`;
+  if (archivedProducts.length) {
+    html += `<details><summary>Archived (${archivedProducts.length})</summary>`;
+    html += archivedProducts.map((p) => `<div class="row-line">
+        <span class="feed-name">${esc(p.name)}</span>
+        <button data-action="restore-product" data-id="${p.id}">Restore</button>
+      </div>`).join('');
+    html += `</details>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="setup-section"><h2>Schedule</h2>`;
+  html += state.horses.map((h) => `<div class="schedule-horse">
+      <h3>${esc(h.name)}</h3>
+      ${activeProducts.length ? activeProducts.map((p) => `<div class="feed-row">
+        <span class="feed-name">${esc(p.name)}</span>
+        <input type="number" step="any" class="feed-input" data-action="schedule-input" data-horse="${h.id}" data-product="${p.id}" value="${(state.schedule[h.id] && state.schedule[h.id][p.id]) || ''}">
+        <span class="unit">${p.unit === 'scoop' ? 'scoops' : 'g'}</span>
+      </div>`).join('') : '<p class="empty">No products.</p>'}
+    </div>`).join('');
+  html += `</div>`;
+
+  html += `<div class="setup-section"><h2>Settings</h2>
+    <label>Safety days <input type="number" id="safety-days" value="${state.settings.safetyDays}" min="0"></label>
+    <label>ntfy topic <input type="text" id="ntfy-topic" value="${esc(state.settings.ntfyTopic)}"></label>
+    <button class="btn-secondary" data-action="test-ntfy">Test notification</button>
+    <h3>Gist sync</h3>
+    <label>GitHub token <input type="password" id="gist-token" value="${esc(localStorage.getItem(TOKEN_KEY) || '')}"></label>
+    <label>Gist id <input type="text" id="gist-id" value="${esc(state.settings.gistId)}"></label>
+    <button class="btn-secondary" data-action="sync-now">Sync now</button>
+    <p class="hint">${esc(syncStatus)}</p>
+  </div>`;
+
+  html += `<div class="setup-section"><h2>Data</h2>
+    <button class="btn-secondary" data-action="export-data">Export JSON</button>
+    <label class="file-label">Import JSON <input type="file" id="import-file" accept="application/json"></label>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function onAddHorse() {
+  const name = prompt('Horse name?');
+  if (!name || !name.trim()) return;
+  const id = genId();
+  state.horses.push({ id, name: name.trim() });
+  state.schedule[id] = {};
+  save();
+}
+
+function onRemoveHorse(id) {
+  const hasLogs = Object.values(state.logs).some((day) => day[id] && Object.keys(day[id]).length);
+  if (hasLogs) { alert('Cannot remove: this horse already has logged feedings.'); return; }
+  if (!confirm('Remove this horse?')) return;
+  state.horses = state.horses.filter((h) => h.id !== id);
+  delete state.schedule[id];
+  save();
+}
+
+function setProductArchived(id, archived) {
+  const product = state.products.find((p) => p.id === id);
+  if (product) { product.archived = archived; save(); }
+}
+
+const productDialog = document.getElementById('product-dialog');
+function toggleGpsField() {
+  document.getElementById('pd-gps-label').style.display = document.getElementById('pd-unit').value === 'scoop' ? '' : 'none';
+}
+document.getElementById('pd-unit').addEventListener('change', toggleGpsField);
+
+function openProductDialog(product) {
+  document.getElementById('product-dialog-title').textContent = product ? 'Edit product' : 'Add product';
+  document.getElementById('pd-id').value = product ? product.id : '';
+  document.getElementById('pd-name').value = product ? product.name : '';
+  document.getElementById('pd-unit').value = product ? product.unit : 'g';
+  document.getElementById('pd-gps').value = product ? (product.gramsPerScoop || '') : '';
+  document.getElementById('pd-pack-kg').value = product ? (product.packGrams / 1000 || '') : '';
+  document.getElementById('pd-pack-label').value = product ? (product.packLabel || '') : '';
+  document.getElementById('pd-stock-kg').value = product ? (product.stockGrams / 1000) : 0;
+  toggleGpsField();
+  productDialog.showModal();
+}
+
+productDialog.addEventListener('close', () => {
+  if (productDialog.returnValue !== 'ok') return;
+  const name = document.getElementById('pd-name').value.trim();
+  if (!name) return;
+  const id = document.getElementById('pd-id').value || genId();
+  const unit = document.getElementById('pd-unit').value;
+  const gramsPerScoop = parseNum(document.getElementById('pd-gps').value);
+  const packGrams = Math.round(parseNum(document.getElementById('pd-pack-kg').value) * 1000);
+  const packLabel = document.getElementById('pd-pack-label').value.trim();
+  const stockGrams = Math.round(parseNum(document.getElementById('pd-stock-kg').value) * 1000);
+
+  const existing = state.products.find((p) => p.id === id);
+  if (existing) {
+    Object.assign(existing, { name, unit, gramsPerScoop, packGrams, packLabel, stockGrams });
+  } else {
+    state.products.push({ id, name, unit, gramsPerScoop, stockGrams, packGrams, packLabel, archived: false });
+  }
+  save();
+});
+
+async function onTestNtfy() {
+  const topic = state.settings.ntfyTopic;
+  if (!topic) { alert('Set an ntfy topic first.'); return; }
+  try {
+    await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, { method: 'POST', body: 'Test notification from Horse Feed app' });
+    showToast('Test sent');
+  } catch (e) {
+    showToast('Failed to send: ' + e.message);
+  }
+}
+
+function onExport() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `feedapp-backup-${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function onImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(reader.result);
+    } catch (e) {
+      alert('Invalid JSON file: ' + e.message);
+      return;
+    }
+    if (!confirm('Replace all current data with the imported file?')) return;
+    state = Object.assign(seedState(), parsed);
+    save();
+    showToast('Imported');
+  };
+  reader.readAsText(file);
+}
+
+// ---------- gist sync ----------
+
+function setSyncStatus(text) {
+  syncStatus = text;
+  if (currentTab === 'setup') render();
+}
+
+let pushTimer = null;
+function schedulePush() {
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(doPush, 3000);
+}
+
+async function doPush() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const gistId = state.settings.gistId;
+  if (!token || !gistId) { setSyncStatus('sync off'); return; }
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { 'feedapp.json': { content: JSON.stringify(state) } } }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    setSyncStatus('synced ' + new Date().toLocaleTimeString());
+  } catch (e) {
+    setSyncStatus('sync failed: ' + e.message);
+  }
+}
+
+async function pullState() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const gistId = state.settings.gistId;
+  if (!token || !gistId) { setSyncStatus('sync off'); return; }
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const file = data.files && data.files['feedapp.json'];
+    if (!file) throw new Error('no feedapp.json in gist');
+    const remote = JSON.parse(file.content);
+    // Never let a pulled state clear the gist id we're syncing through.
+    if (remote.settings) remote.settings.gistId = remote.settings.gistId || gistId;
+    if (remote.updatedAt > state.updatedAt) {
+      state = Object.assign(seedState(), remote);
+      persistLocal();
+      render();
+      setSyncStatus('pulled newer remote');
+    } else if (state.updatedAt > (remote.updatedAt || 0)) {
+      schedulePush();
+      setSyncStatus('local newer, pushing');
+    } else {
+      setSyncStatus('in sync');
+    }
+  } catch (e) {
+    setSyncStatus('sync failed: ' + e.message);
+  }
+}
+
+// ---------- tabs / dispatch ----------
+
+function switchTab(tab) {
+  currentTab = tab;
+  render();
+}
+
+function render() {
+  document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === currentTab));
+  const el = document.getElementById('view-' + currentTab);
+  el.classList.add('active');
+  if (currentTab === 'home') renderHome(el);
+  else if (currentTab === 'today') renderToday(el);
+  else if (currentTab === 'stock') renderStock(el);
+  else if (currentTab === 'setup') renderSetup(el);
+}
+
+// ---------- events ----------
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.tagName === 'A') e.preventDefault();
+  switch (btn.dataset.action) {
+    case 'switch-tab': switchTab(btn.dataset.tab); break;
+    case 'go-today': switchTab('today'); break;
+    case 'save-day': onSaveDay(); break;
+    case 'delete-day': onDeleteDay(); break;
+    case 'open-buy': openBuyDialog(btn.dataset.id); break;
+    case 'plan-quick': planDays = Number(btn.dataset.days); render(); break;
+    case 'add-horse': onAddHorse(); break;
+    case 'remove-horse': onRemoveHorse(btn.dataset.id); break;
+    case 'add-product': openProductDialog(null); break;
+    case 'edit-product': openProductDialog(state.products.find((p) => p.id === btn.dataset.id)); break;
+    case 'archive-product': setProductArchived(btn.dataset.id, true); break;
+    case 'restore-product': setProductArchived(btn.dataset.id, false); break;
+    case 'test-ntfy': onTestNtfy(); break;
+    case 'sync-now': pullState(); break;
+    case 'export-data': onExport(); break;
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'today-date') { if (t.value) { todayViewDate = t.value; extraRows = {}; render(); } }
+  else if (t.id === 'plan-days') { planDays = Math.max(1, parseNum(t.value)); render(); }
+  else if (t.matches('[data-action="add-extra"]')) {
+    const pid = t.value;
+    if (pid) { const hid = t.dataset.horse; extraRows[hid] = (extraRows[hid] || []).concat(pid); render(); }
+  } else if (t.matches('[data-action="rename-horse"]')) {
+    const h = state.horses.find((h) => h.id === t.dataset.id);
+    if (h && t.value.trim()) { h.name = t.value.trim(); save(); }
+  } else if (t.matches('[data-action="schedule-input"]')) {
+    const hid = t.dataset.horse, pid = t.dataset.product;
+    const val = parseNum(t.value);
+    if (!state.schedule[hid]) state.schedule[hid] = {};
+    if (val > 0) state.schedule[hid][pid] = val; else delete state.schedule[hid][pid];
+    save();
+  } else if (t.id === 'safety-days') { state.settings.safetyDays = parseNum(t.value); save(); }
+  else if (t.id === 'ntfy-topic') { state.settings.ntfyTopic = t.value.trim(); save(); }
+  else if (t.id === 'gist-id') { state.settings.gistId = t.value.trim(); save(); }
+  else if (t.id === 'gist-token') { localStorage.setItem(TOKEN_KEY, t.value.trim()); }
+  else if (t.id === 'import-file') { onImportFile(t.files[0]); }
+});
+
+// ---------- startup ----------
+
+render();
+pullState();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(() => {});
+}
+document.addEventListener('click', () => {
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+}, { once: true });
+</script>
+</body>
+</html>
