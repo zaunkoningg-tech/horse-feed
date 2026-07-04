@@ -12,8 +12,13 @@ function fmtDate(dateStr) {
   return dt.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', timeZone: 'UTC' });
 }
 
+// Strip BOM/whitespace that can sneak in when secrets are piped in on Windows.
+const clean = (s) => (s || '').replace(/^﻿/, '').trim();
+
 async function main() {
-  const { GIST_TOKEN, GIST_ID, NTFY_TOPIC } = process.env;
+  const GIST_TOKEN = clean(process.env.GIST_TOKEN);
+  const GIST_ID = clean(process.env.GIST_ID);
+  const NTFY_TOPIC = clean(process.env.NTFY_TOPIC);
   if (!GIST_TOKEN || !GIST_ID || !NTFY_TOPIC) {
     console.error('Missing required env vars: GIST_TOKEN, GIST_ID, NTFY_TOPIC');
     process.exit(1);
@@ -29,6 +34,11 @@ async function main() {
     const file = data.files && data.files['feedapp.json'];
     if (!file) throw new Error('feedapp.json not found in gist');
     state = JSON.parse(file.content);
+    // The gist starts as a bare placeholder before the app's first sync.
+    state = Object.assign(
+      { settings: { safetyDays: 3 }, products: [], horses: [], schedule: {}, logs: {}, purchases: [] },
+      state
+    );
   } catch (err) {
     console.error('Failed to load state from gist:', err.message);
     process.exit(1);
